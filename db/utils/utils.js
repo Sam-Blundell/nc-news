@@ -1,11 +1,14 @@
 exports.formatDates = list => {
-  // if (list.length === 0) return [];
+  if (list.length === 0) return [];
 
-  // const newList = [...list];
+  const newList = [...list];
 
-  // newList[0].time = newList[0].time.slice(0, -5).replace("T", " ");
+  newList.map(object => {
+    object.created_at = new Date(object.created_at);
+  })
 
-  // return newList;
+  return newList;
+
 };
 
 exports.makeRefObj = list => {
