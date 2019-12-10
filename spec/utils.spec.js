@@ -180,5 +180,139 @@ describe('makeRefObj', () => {
 });
 
 describe('formatComments', () => {
-
+  it('should return an empty array when passed an empty array and a reference object', () => {
+    expect(formatComments([], {})).to.deep.equal([]);
+  });
+  describe('formatting objects in the array', () => {
+    const commentArr = [
+      {
+        body: 'Fruit pastilles',
+        belongs_to: 'Living in the shadow of a great man',
+        created_by: 'icellusedkars',
+        votes: 0,
+        created_at: 1132922163389,
+      }
+    ];
+    const refObj = {
+      "Living in the shadow of a great man": 10
+    };
+    const expected = formatComments(commentArr, refObj)[0]; //checking first object inside returned array
+    it('should rename the "created_by" key to "author"', () => {
+      expect(expected).to.include.all.keys('author')
+      expect(expected).to.not.have.any.keys('created_by')
+    })
+    it('should rename the "belongs_to" key to "article_id, with a value corresponding to the id of the article specified', () => {
+      expect(expected).to.include.all.keys('article_id')
+      expect(expected).to.not.have.any.keys('belongs_to')
+      expect(expected.article_id).to.equal(10);
+    })
+    it('should convert the "created_at" key value to a javascript date object', () => {
+      const newTime = new Date(commentArr[0].created_at);
+      expect(expected.created_at).to.deep.equal(newTime);
+    })
+    it('the remaining object properties (body, votes) should be unchanged', () => {
+      expect(expected).to.have.all.keys(['body', 'article_id', 'author', 'votes', 'created_at']);
+    })
+  })
+  it('when passed an array of a single comment object and a reference object, should be able to return a new array containing a new formatted comment object', () => {
+    const input = [
+      {
+        body: 'Fruit pastilles',
+        belongs_to: 'Living in the shadow of a great man',
+        created_by: 'icellusedkars',
+        votes: 0,
+        created_at: 1132922163389,
+      }
+    ];
+    const refObj = { 'Living in the shadow of a great man': 10 }
+    const expected = formatComments(input, refObj);
+    const actual = [
+      {
+        body: 'Fruit pastilles',
+        article_id: 10,
+        author: 'icellusedkars',
+        votes: 0,
+        created_at: new Date(1132922163389),
+      }
+    ]
+    expect(expected).to.deep.equal(actual);
+  })
+  it('when passed an array of comment objects and a reference object, returns a new array containing new formatted comment objects', () => {
+    const input = [
+      {
+        body: 'Fruit pastilles',
+        belongs_to: 'Living in the shadow of a great man',
+        created_by: 'icellusedkars',
+        votes: 0,
+        created_at: 1132922163389,
+      },
+      {
+        body:
+          'What do you see? I have no idea where this will lead us. This place I speak of, is known as the Black Lodge.',
+        belongs_to: 'UNCOVERED: catspiracy to bring down democracy',
+        created_by: 'icellusedkars',
+        votes: 16,
+        created_at: 1101386163389,
+      },
+      {
+        body: "I am 100% sure that we're not completely sure.",
+        belongs_to: 'UNCOVERED: catspiracy to bring down democracy',
+        created_by: 'butter_bridge',
+        votes: 1,
+        created_at: 1069850163389,
+      }
+    ];
+    const refObj = {
+      'Living in the shadow of a great man': 10,
+      'UNCOVERED: catspiracy to bring down democracy': 5
+    };
+    const expected = formatComments(input, refObj);
+    const actual = [
+      {
+        body: 'Fruit pastilles',
+        article_id: 10,
+        author: 'icellusedkars',
+        votes: 0,
+        created_at: new Date(1132922163389),
+      },
+      {
+        body:
+          'What do you see? I have no idea where this will lead us. This place I speak of, is known as the Black Lodge.',
+        article_id: 5,
+        author: 'icellusedkars',
+        votes: 16,
+        created_at: new Date(1101386163389),
+      },
+      {
+        body: "I am 100% sure that we're not completely sure.",
+        article_id: 5,
+        author: 'butter_bridge',
+        votes: 1,
+        created_at: new Date(1069850163389),
+      }
+    ];
+    expect(expected).to.deep.equal(actual);
+  });
+  it('should return a new array and not mutate the original input array', () => {
+    const input = [
+      {
+        body: "I am 100% sure that we're not completely sure.",
+        belongs_to: 'UNCOVERED: catspiracy to bring down democracy',
+        created_by: 'butter_bridge',
+        votes: 1,
+        created_at: 1069850163389,
+      }
+    ];
+    const refObj = { 'UNCOVERED: catspiracy to bring down democracy': 5 }
+    expect(formatComments(input, refObj)).to.not.equal(input);
+    expect(input).to.deep.equal([
+      {
+        body: "I am 100% sure that we're not completely sure.",
+        belongs_to: 'UNCOVERED: catspiracy to bring down democracy',
+        created_by: 'butter_bridge',
+        votes: 1,
+        created_at: 1069850163389,
+      }
+    ])
+  })
 });
