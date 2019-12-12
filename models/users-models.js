@@ -5,7 +5,7 @@ const fetchUsers = (params) => {
   return connection.select('*').from('users').where('username', '=', params.username)
     .then(selection => {
       if (selection.length === 0) {
-        return Promise.reject({ msg: "User Not Found" })
+        return Promise.reject({ err: [404, "User Not Found"] })
       } else {
         return selection;
       }
