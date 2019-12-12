@@ -19,16 +19,38 @@ const fetchArticle = (params) => {
 
 const updateArticle = (params, voteChange) => {
   console.log('accessed updateArticle model...');
-  if (!Number.isInteger(voteChange.inc_votes)) {
+  if (!Number.isInteger(voteChange.inc_votes) || Object.keys(voteChange).length > 1) {
     return Promise.reject({ err: [400, 'Invalid Request Body'] })
   } else {
     return connection('articles')
       .where('articles.article_id', '=', params.article_id)
       .increment('votes', voteChange.inc_votes)
-    //.returning('*'); can't just do return here because the article doesn't have a "comment_count"
-    // better to just return here and then call fetchArticle in the controller or re-write same code in this model?
-
+      .returning('*')
+      .then(article => {
+        if (article.length === 0) {
+          return Promise.reject({ 'err': [404, 'Article Not Found'] })
+        } else {
+          return article;
+        }
+      })
   }
 }
 
-module.exports = { fetchArticle, updateArticle };
+const insertComment = (article_id, comment) => {
+  console.log('accessed insertComment model...')
+  let keyArr = Object.keys(comment);
+  if (keyArr.length !== 2 || !keyArr.includes('username') || !keyArr.includes('body')) {
+    return Promise.reject({ err: [400, 'Invalid Request Body'] })
+  } else {
+    return connection('comments')
+      .insert({
+        author: comment.username,
+        article_id: article_id.article_id,
+        body: comment.body
+      })
+      .returning('*');
+  }
+
+}
+
+module.exports = { fetchArticle, updateArticle, insertComment };

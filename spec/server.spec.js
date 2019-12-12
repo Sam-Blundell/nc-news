@@ -90,10 +90,10 @@ describe('/api', () => {
           .then(response => {
             expect(response.body).to.be.an('object');
             expect(response.body.article.votes).to.equal(110); //article_id:1 initially has 100 votes.
-            expect(response.body.article).to.have.all.keys(['author', 'title', 'article_id', 'body', 'topic', 'created_at', 'votes', 'comment_count'])
+            expect(response.body.article).to.have.all.keys(['author', 'title', 'article_id', 'body', 'topic', 'created_at', 'votes'])
           })
       })
-      it('PATCH:404 Not Found. Should respond with "Article Not Found" when receives a request with a parameter that doesnt exist in the database', () => {
+      it('PATCH:404 Not Found. Should respond with "Article Not Found" when receives a request with a valid parameter that doesnt exist in the database', () => {
         return request(server).patch('/api/articles/999/').send({ inc_votes: 10 })
           .expect(404)
           .then(response => {
@@ -107,7 +107,7 @@ describe('/api', () => {
             expect(response.body.msg).to.equal('Invalid Article Id');
           })
       });
-      it('PATCH:400 Bad Request. Should respond with "Invalid Request Body" when receives a valid PATCH request that exists in the database, but with an invalid request body', () => {
+      it('PATCH:400 Bad Request. Should respond with "Invalid Request Body" when receives a valid request that exists in the database, but with an invalid request body', () => {
         return request(server).patch('/api/articles/1').send({ inc_votes: 'votes' })
           .expect(400)
           .then(response => {
@@ -126,9 +126,35 @@ describe('/api', () => {
         return Promise.all(methodPromises);
       });
       describe('/comments', () => {
-        it('POST:201', () => {
-
+        it('POST:201, when passed an object in the request body with keys "username" and "body" with string values, adds the comment to the database, updates the appropriate tables, and responds with the posted comment', () => {
+          return request(server).post('/api/articles/1/comments').send({ username: 'icellusedkars', body: 'first!' })
+            .expect(201)
+            .then(response => {
+              expect(response.body).to.be.an('object');
+              expect(response.body.comment).to.have.all.keys(['comment_id', 'author', 'article_id', 'votes', 'created_at', 'body'])
+            })
         });
+        it('POST:404 No Such User. Should respond with "No Such User" when receives a request object with a user that doesnt exist', () => {
+          return request(server).post('/api/articles/1/comments').send({ username: 'noface', body: 'sometext' })
+            .expect(404)
+            .then(response => {
+              expect(response.body.msg).to.equal('Not Found');
+            })
+        })
+        it('POST:400 Bad Request. Should respond with "Invalid Request Body" when receives a valid request that exists in the database but with an invalid request body', () => {
+          return request(server).post('/api/articles/1/comments').send({ username: 'icellusedkars', strangeKey: 'strange value' })
+            .expect(400)
+            .then(response => {
+              expect(response.body.msg).to.equal('Invalid Request Body');
+            })
+        });
+        it('POST:404 No Such Article. Should respond with "Not Found" when receives a request with a valid parameter that doesnt exist in the database', () => {
+          return request(server).post('/api/articles/999/comments').send({ username: 'icellusedkars', body: 'I sell used cars' })
+            .expect(404)
+            .then(response => {
+              expect(response.body.msg).to.equal('Not Found');
+            })
+        })
       });
     });
   });

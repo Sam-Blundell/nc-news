@@ -1,4 +1,4 @@
-const { fetchArticle, updateArticle } = require('../models/articles-models');
+const { fetchArticle, updateArticle, insertComment } = require('../models/articles-models');
 
 const getArticle = (req, res, next) => {
   console.log('accessed getArticle controller...');
@@ -12,12 +12,8 @@ const getArticle = (req, res, next) => {
 }
 
 const patchArticle = (req, res, next) => {
-  console.log('accessed patchArticle controller...');
-  //console.log(req.body)
+  console.log('accessed patchArticle controller...')
   updateArticle(req.params, req.body)
-    .then(() => {
-      return fetchArticle(req.params)
-    })
     .then(article => {
       res.status(200).send({ "article": article[0] });
     })
@@ -26,4 +22,15 @@ const patchArticle = (req, res, next) => {
     })
 }
 
-module.exports = { getArticle, patchArticle };
+const postComment = (req, res, next) => {
+  console.log('accessed postComment controller...');
+  insertComment(req.params, req.body)
+    .then(comment => {
+      res.status(201).send({ 'comment': comment[0] });
+    })
+    .catch(err => {
+      next(err);
+    })
+}
+
+module.exports = { getArticle, patchArticle, postComment };
