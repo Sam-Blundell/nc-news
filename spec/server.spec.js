@@ -73,7 +73,7 @@ describe('/api', () => {
             expect(response.body.article).to.have.all.keys(['author', 'title', 'article_id', 'body', 'topic', 'created_at', 'votes', 'comment_count'])
           })
       });
-      it('GET:404 Not Found. Should respond with "Article Not Found" when receives a valid query that doesnt exist in the database', () => {
+      it('GET:404 Not Found. Should respond with "Article Not Found" when receives a valid parameter that doesnt exist in the database', () => {
         return request(server).get('/api/articles/999')
           .expect(404)
           .then(response => {
@@ -355,28 +355,34 @@ describe('/api', () => {
           })
       })
       it('DELETE:204. Deletes the comment associated with the comment_id', () => {
-        return request(server).delete('/api/comments/1')
+        return request(server).delete('/api/comments/2')
           .expect(204)
-      })
-      it('DELETE:404 Comment Not Found. Should respond with "Comment Not Found" when receives a request with a valid comment_id that doesnt exist in the database', () => {
-        return request(server).delete('/api/comments/99999')
-          .expect(404)
-          .then(response => {
-            expect(response.body.msg).to.equal('Comment Not Found')
+          .then(() => {
+            return request(server).get('/api/articles/1')
+              .expect(200)
+              .then(response => {
+                expect(+response.body.article.comment_count).to.equal(12); //article_id=1 originally has 13 comments
+              })
           })
       })
-      it('Status:405 Method Not Allowed. Should respond with "Method Not Allowed when an invalid http request is sent', () => {
-        const invalidMethods = ['put', 'post', 'get'];
-        const methodPromises = invalidMethods.map(method => {
-          return request(server)[method]('/api/comments/:comment_id')
-            .expect(405)
-            .then(response => {
-              expect(response.body.msg).to.equal('Method Not Allowed');
-            })
+    })
+    it('DELETE:404 Comment Not Found. Should respond with "Comment Not Found" when receives a request with a valid comment_id that doesnt exist in the database', () => {
+      return request(server).delete('/api/comments/99999')
+        .expect(404)
+        .then(response => {
+          expect(response.body.msg).to.equal('Comment Not Found')
         })
-        return Promise.all(methodPromises);
-      });
+    })
+    it('Status:405 Method Not Allowed. Should respond with "Method Not Allowed when an invalid http request is sent', () => {
+      const invalidMethods = ['put', 'post'];
+      const methodPromises = invalidMethods.map(method => {
+        return request(server)[method]('/api/comments/:comment_id')
+          .expect(405)
+          .then(response => {
+            expect(response.body.msg).to.equal('Method Not Allowed');
+          })
+      })
+      return Promise.all(methodPromises);
     });
   });
-
-})
+});

@@ -25,11 +25,10 @@ const removeComment = (id) => {
 
   return connection('comments')
     .where('comment_id', '=', id)
+    .del()
     .then(comment => {
-      if (!comment.length) {
+      if (!comment) {
         return Promise.reject({ 'err': [404, 'Comment Not Found'] })
-      } else {
-        return comment.del()
       }
     })
 }
