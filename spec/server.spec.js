@@ -3,6 +3,9 @@ const { expect } = require('chai');
 const request = require('supertest');
 const connection = require('../db/connection.js');
 const { server } = require('../server.js');
+const chai = require('chai');
+const chaiSorted = require('chai-sorted')
+chai.use(chaiSorted);
 
 describe('/api', () => {
   after(() => connection.destroy());
@@ -77,11 +80,11 @@ describe('/api', () => {
             expect(response.body.msg).to.equal('Article Not Found');
           })
       });
-      it('GET:400 Bad Request. Should respond with "Invalid Article Id" when receives a parameter that isnt an integer', () => {
+      it('GET:400 Bad Request. Should respond with "Bad Request" when receives a parameter that isnt an integer', () => {
         return request(server).get('/api/articles/didnthappen')
           .expect(400)
           .then(response => {
-            expect(response.body.msg).to.equal('Invalid Article Id');
+            expect(response.body.msg).to.equal('Bad Request');
           })
       });
       it('PATCH:200, when passed an object in the request body with key "inc_votes" with a number value updates the "votes" property in the database for the article specified on the endpoint and responds with the updated article', () => {
@@ -100,11 +103,11 @@ describe('/api', () => {
             expect(response.body.msg).to.equal('Article Not Found');
           })
       });
-      it('PATCH:400 Bad Request. Should respond with "Invalid Article Id" when receives a request with a parameter that isnt an integer', () => {
+      it('PATCH:400 Bad Request. Should respond with "Bad Request" when receives a request with a parameter that isnt an integer', () => {
         return request(server).patch('/api/articles/didnthappen').send({ inc_votes: 10 })
           .expect(400)
           .then(response => {
-            expect(response.body.msg).to.equal('Invalid Article Id');
+            expect(response.body.msg).to.equal('Bad Request');
           })
       });
       it('PATCH:400 Bad Request. Should respond with "Invalid Request Body" when receives a valid request that exists in the database, but with an invalid request body', () => {
@@ -155,7 +158,225 @@ describe('/api', () => {
               expect(response.body.msg).to.equal('Not Found');
             })
         })
+        it('GET:200, responds with an array containing all the comments for the specifced article_id. The comments must have keys "comment_id", "votes", "created_at", "author", "body"', () => {
+          return request(server).get('/api/articles/1/comments')
+            .expect(200)
+            .then(response => {
+              expect(response.body).to.be.an('object');
+              expect(response.body.comments).to.be.an('array')
+              response.body.comments.map(comment => {
+                expect(comment).to.have.all.keys(['comment_id', 'votes', 'created_at', 'author', 'body'])
+              })
+            })
+        })
+        it('GET:200, accepts an optional "sort_by" query that will sort the returned array of results by any valid column, defaulting to created_at', () => {
+          return request(server).get('/api/articles/1/comments?sort_by=votes')
+            .expect(200)
+            .then(response => {
+              expect(response.body.comments).to.be.sortedBy('votes', { descending: true });
+            })
+        });
+        it('GET:200, accepts a second optional "order" query that specifies the order (ascending or descending) of the preceeding "sort_by" query, defaulting to descending', () => {
+          return request(server).get('/api/articles/1/comments?sort_by=votes&order=asc')
+            .expect(200)
+            .then(response => {
+              expect(response.body.comments).to.be.sortedBy('votes')
+            })
+        });
+        it('GET:404, No Such article_id. Should respond with "No Such article_id" when passed a parameter of a valid article_id that doesnt exist in the database', () => {
+          return request(server).get('/api/articles/999/comments')
+            .expect(404)
+            .then(response => {
+              expect(response.body.msg).to.equal("No Such article_id")
+            })
+        })
+        it('GET:200, Should respond with an empty array when passed an article_id that exists in the database but has no comments', () => {
+          return request(server).get('/api/articles/2/comments')
+            .expect(200)
+            .then(response => {
+              expect(response.body.comments).to.deep.equal([]);
+            })
+        });
+        it('GET:400, Invalid Column. Should respond with "Bad Request" when passed a sort_by query that isnt a valid column', () => {
+          return request(server).get('/api/articles/1/comments?sort_by=theSecretColumn')
+            .expect(400)
+            .then(response => {
+              expect(response.body.msg).to.equal('Bad Request')
+            })
+        })
+        it('GET:200, when passed a valid sort_by query and an order query that isnt either asc or desc, defaults to desc', () => {
+          return request(server).get('/api/articles/1/comments?sort_by=author&order=sideways')
+            .expect(200)
+            .then(response => {
+              expect(response.body.comments).to.be.sortedBy('author', { descending: true })
+            })
+        })
+        it('Status:405 Method Not Allowed. Should respond with "Method Not Allowed when an invalid http request is sent', () => {
+          const invalidMethods = ['put', 'delete', 'patch'];
+          const methodPromises = invalidMethods.map(method => {
+            return request(server)[method]('/api/articles/:article_id/comments')
+              .expect(405)
+              .then(response => {
+                expect(response.body.msg).to.equal('Method Not Allowed');
+              })
+          })
+          return Promise.all(methodPromises);
+        });
+      });
+    });
+    it('GET:200, should respond with an array of article objects that have keys "author", "title", "article_id", "topic", "created_at", "votes", "comment_count"', () => {
+      return request(server).get('/api/articles')
+        .expect(200)
+        .then(response => {
+          expect(response.body.articles).to.be.an('array');
+          response.body.articles.map(article => {
+            expect(article).to.have.all.keys(['author', 'title', 'article_id', 'topic', 'created_at', 'votes', 'comment_count'])
+          })
+        })
+    });
+    it('GET:200, accepts an optional "sort_by" query that will sort the returned array of objects by any valid column, defaulting to created_at', () => {
+      return request(server).get('/api/articles?sort_by=votes')
+        .expect(200)
+        .then(response => {
+          expect(response.body.articles).to.be.sortedBy('votes', { descending: true });
+        })
+    });
+    it('GET:200, accepts a second optional "order" query that specifies the order (ascending or descending) of the preceeding "sort_by" query, defaulting to descending', () => {
+      return request(server).get('/api/articles?sort_by=votes&order=asc')
+        .expect(200)
+        .then(response => {
+          expect(response.body.articles).to.be.sortedBy('votes')
+        })
+    });
+    it('GET:200, accepts an optional "author" query that will filter the returned array of objects by the specified username', () => {
+      return request(server).get('/api/articles?author=icellusedkars')
+        .expect(200)
+        .then(response => {
+          expect(response.body.articles.length).to.equal(6);
+          response.body.articles.map(articles => {
+            expect(articles.author).to.equal('icellusedkars');
+          })
+        })
+    });
+    it('GET:200, accepts an optional "topic" query that will filter the returned array of objects by the specified topic', () => {
+      return request(server).get('/api/articles?topic=cats')
+        .expect(200)
+        .then(response => {
+          expect(response.body.articles.length).to.equal(1);
+          response.body.articles.map(articles => {
+            expect(articles.topic).to.equal('cats');
+          })
+        })
+    });
+    it('GET:400, Invalid Column. Should respond with "Bad Request" when passed a sort_by query that isnt a valid column', () => {
+      return request(server).get('/api/articles?sort_by=notAColumn')
+        .expect(400)
+        .then(response => {
+          expect(response.body.msg).to.equal('Bad Request')
+        })
+    })
+    it('GET:200, when passed a valid sort_by query and an order query that isnt either asc or desc, defaults to desc', () => {
+      return request(server).get('/api/articles?sort_by=title&order=sideways')
+        .expect(200)
+        .then(response => {
+          expect(response.body.articles).to.be.sortedBy('title', { descending: true })
+        })
+    })
+    it('GET:200, when passed a valid author query that exists in the database but if there are no articles written by that author, should return an empty array', () => {
+      return request(server).get('/api/articles?author=lurker')
+        .expect(200)
+        .then(response => {
+          expect(response.body.articles).to.deep.equal([])
+        })
+    })
+    it('GET:200, when passed a valid topic query that exists in the database but if there are no articles written on that topic, should return an empty array', () => {
+      return request(server).get('/api/articles?topic=paper')
+        .expect(200)
+        .then(response => {
+          expect(response.body.articles).to.deep.equal([])
+        })
+    })
+    it('GET:404. No Such username. When passed a valid author query that doesnt exist in the database should return "No Such username"', () => {
+      return request(server).get('/api/articles?author=noface')
+        .expect(404)
+        .then(response => {
+          expect(response.body.msg).to.equal('No Such username')
+        })
+    })
+    it('GET:404. No Such slug. When passed a valid topic query that doesnt exist in the database should respond with "No Such slug"', () => {
+      return request(server).get('/api/articles?topic=thejoysoftesting')
+        .expect(404)
+        .then(response => {
+          expect(response.body.msg).to.equal('No Such slug')
+        })
+    })
+    it('Status:405 Method Not Allowed. Should respond with "Method Not Allowed when an invalid http request is sent', () => {
+      const invalidMethods = ['put', 'delete', 'patch'];
+      const methodPromises = invalidMethods.map(method => {
+        return request(server)[method]('/api/articles/:article_id/comments')
+          .expect(405)
+          .then(response => {
+            expect(response.body.msg).to.equal('Method Not Allowed');
+          })
+      })
+      return Promise.all(methodPromises);
+    });
+  });
+  describe('/comments', () => {
+    describe('/:comment_id', () => {
+      it('PATCH:200, when passed an object in the request body with key "inc_votes" with a number value updates the "votes" property in the database for the comment specified on the endpoint and responds with the updated comment', () => {
+        return request(server).patch('/api/comments/1').send({ inc_votes: 4 })
+          .expect(200)
+          .then(response => {
+            expect(response.body).to.be.an('object');
+            expect(response.body.comment[0].votes).to.equal(20); //comment_id:1 initially has 16 votes.
+            expect(response.body.comment[0]).to.have.all.keys(['author', 'comment_id', 'article_id', 'body', 'created_at', 'votes'])
+          })
+      })
+      it('PATCH:404 Not Found. Should respond with "Comment Not Found" when receives a request with a valid parameter that doesnt exist in the database', () => {
+        return request(server).patch('/api/comments/1111111/').send({ inc_votes: 10 })
+          .expect(404)
+          .then(response => {
+            expect(response.body.msg).to.equal('Comment Not Found');
+          })
+      });
+      it('PATCH:400 Bad Request. Should respond with "Bad Request" when receives a request with a parameter that isnt an integer', () => {
+        return request(server).patch('/api/comments/howdidthisgethere').send({ inc_votes: 10 })
+          .expect(400)
+          .then(response => {
+            expect(response.body.msg).to.equal('Bad Request');
+          })
+      });
+      it('PATCH:400 Bad Request. Should respond with "Invalid Request Body" when receives a valid request that exists in the database, but with an invalid request body', () => {
+        return request(server).patch('/api/comments/1').send({ inc_votes: 'votes' })
+          .expect(400)
+          .then(response => {
+            expect(response.body.msg).to.equal('Invalid Request Body')
+          })
+      })
+      it('DELETE:204. Deletes the comment associated with the comment_id', () => {
+        return request(server).delete('/api/comments/1')
+          .expect(204)
+      })
+      it('DELETE:404 Comment Not Found. Should respond with "Comment Not Found" when receives a request with a valid comment_id that doesnt exist in the database', () => {
+        return request(server).delete('/api/comments/99999')
+          .expect(404)
+          .then(response => {
+            expect(response.body.msg).to.equal('Comment Not Found')
+          })
+      })
+      it('Status:405 Method Not Allowed. Should respond with "Method Not Allowed when an invalid http request is sent', () => {
+        const invalidMethods = ['put', 'post', 'get'];
+        const methodPromises = invalidMethods.map(method => {
+          return request(server)[method]('/api/comments/:comment_id')
+            .expect(405)
+            .then(response => {
+              expect(response.body.msg).to.equal('Method Not Allowed');
+            })
+        })
+        return Promise.all(methodPromises);
       });
     });
   });
+
 })

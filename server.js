@@ -12,8 +12,9 @@ server.use((err, req, res, next) => {
   // console.log('///////// ERR /////////\n', err, '\n////////////////////////');
 
   const errorRef = {
-    '22P02': [400, 'Invalid Article Id'],
-    '23503': [404, 'Not Found'] // needs to be more specific
+    '22P02': [400, 'Bad Request'],
+    '23503': [404, 'Not Found'], // needs to be more specific
+    '42703': [400, 'Bad Request']
   }
 
   if (err.code) {
