@@ -2,7 +2,7 @@ const connection = require('../db/connection');
 const checkIfRowExists = require('../errorHandling')
 
 const updateComment = (id, votes) => {
-  console.log('accessed updateComment model...')
+  if (!votes.inc_votes) votes.inc_votes = 0;
   if (!Number.isInteger(votes.inc_votes) || Object.keys(votes).length !== 1) {
     return Promise.reject({ 'err': [400, 'Invalid Request Body'] })
   } else {
@@ -21,8 +21,6 @@ const updateComment = (id, votes) => {
 }
 
 const removeComment = (id) => {
-  console.log('accessed removeComment model...');
-
   return connection('comments')
     .where('comment_id', '=', id)
     .del()

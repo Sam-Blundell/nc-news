@@ -1,6 +1,0 @@
-You are now connected to database "nc_news_test" as user "sam".
- article_id |        title        |                                                                                     body                                                                                      | votes | topic |  author  |         created_at         
-------------+---------------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-------+-------+----------+----------------------------
-          4 | Student SUES Mitch! | We all love Mitch and his wonderful, unique typing style. However, the volume of his typing has ALLEGEDLY burst another students eardrums, and they are now suing for damages |     0 | mitch | rogersop | 2006-11-18 12:21:54.171+00
-(1 row)
-

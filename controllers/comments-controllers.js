@@ -1,7 +1,6 @@
 const { updateComment, removeComment } = require('../models/comments-models');
 
 const patchComment = (req, res, next) => {
-  console.log('accessed patchComment controller...');
   const { comment_id } = req.params;
   updateComment(comment_id, req.body)
     .then(comment => {
@@ -13,7 +12,6 @@ const patchComment = (req, res, next) => {
 }
 
 const deleteComment = (req, res, next) => {
-  console.log('accessed deleteComment controller...');
   const { comment_id } = req.params;
   removeComment(comment_id)
     .then(() => {

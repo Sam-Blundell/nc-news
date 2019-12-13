@@ -10,7 +10,7 @@ const errorHandler = (err, req, res, next) => {
 
   const errorRef = {
     '22P02': [400, 'Bad Request'],
-    '23503': [404, 'Not Found'], // needs to be more specific... maybe
+    '23503': [404, 'Not Found'],
     '42703': [400, 'Bad Request']
   }
 
@@ -20,7 +20,6 @@ const errorHandler = (err, req, res, next) => {
     let [errCode, errMsg] = err.err;
     res.status(errCode).send({ msg: errMsg })
   }
-
 };
 
 module.exports = { send405Error, noRouteError, errorHandler }

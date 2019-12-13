@@ -92,7 +92,15 @@ describe('/api', () => {
           .expect(200)
           .then(response => {
             expect(response.body).to.be.an('object');
-            expect(response.body.article.votes).to.equal(110); //article_id:1 initially has 100 votes.
+            expect(response.body.article.votes).to.equal(110);
+            expect(response.body.article).to.have.all.keys(['author', 'title', 'article_id', 'body', 'topic', 'created_at', 'votes'])
+          })
+      })
+      it('PATCH:200. No Info In Body. when the request body has no info, sends the unchanged comment back to the client', () => {
+        return request(server).patch('/api/articles/1').send()
+          .expect(200)
+          .then(response => {
+            expect(response.body.article.votes).to.equal(100);
             expect(response.body.article).to.have.all.keys(['author', 'title', 'article_id', 'body', 'topic', 'created_at', 'votes'])
           })
       })
@@ -329,7 +337,16 @@ describe('/api', () => {
           .expect(200)
           .then(response => {
             expect(response.body).to.be.an('object');
-            expect(response.body.comment[0].votes).to.equal(20); //comment_id:1 initially has 16 votes.
+            expect(response.body.comment[0].votes).to.equal(20);
+            expect(response.body.comment[0]).to.have.all.keys(['author', 'comment_id', 'article_id', 'body', 'created_at', 'votes'])
+          })
+      })
+      it('PATCH:200, when passed a request body with no information returns the unchanged comment specified on the endpoint', () => {
+        return request(server).patch('/api/comments/1').send()
+          .expect(200)
+          .then(response => {
+            expect(response.body).to.be.an('object');
+            expect(response.body.comment[0].votes).to.equal(16);
             expect(response.body.comment[0]).to.have.all.keys(['author', 'comment_id', 'article_id', 'body', 'created_at', 'votes'])
           })
       })
@@ -384,5 +401,12 @@ describe('/api', () => {
       })
       return Promise.all(methodPromises);
     });
+  });
+  it('GET:200, should respond with a JSON describing all the available endpoints on this API', () => {
+    return request(server).get('/api')
+      .expect(200)
+      .then(response => {
+        expect(response.body).to.be.an('object')
+      })
   });
 });
