@@ -85,16 +85,16 @@ describe('formatDates', () => {
       topic: 'mitch',
       author: 'icellusedkars',
       body: 'some gifs',
-      created_at: new Date(1289996514171)
+      created_at: 1289996514171,
     }];
-    expect(formatDates(input)).to.not.equal(input); //check memory references are different.
+    expect(formatDates(input)).to.not.equal(input);
     expect(input).to.deep.equal([{
       title: 'Eight pug gifs that remind me of mitch',
       topic: 'mitch',
       author: 'icellusedkars',
       body: 'some gifs',
-      created_at: new Date(1289996514171)
-    }]); //check value is same.
+      created_at: 1289996514171,
+    }]);
   })
 });
 
@@ -196,7 +196,7 @@ describe('formatComments', () => {
     const refObj = {
       "Living in the shadow of a great man": 10
     };
-    const expected = formatComments(commentArr, refObj)[0]; //checking first object inside returned array
+    const expected = formatComments(commentArr, refObj)[0];
     it('should rename the "created_by" key to "author"', () => {
       expect(expected).to.include.all.keys('author')
       expect(expected).to.not.have.any.keys('created_by')

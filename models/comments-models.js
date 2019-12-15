@@ -14,7 +14,7 @@ const updateComment = (id, votes) => {
         if (!comment.length) {
           return Promise.reject({ 'err': [404, 'Comment Not Found'] })
         } else {
-          return comment;
+          return comment[0];
         }
       })
   }

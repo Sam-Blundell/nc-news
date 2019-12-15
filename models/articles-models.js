@@ -76,8 +76,6 @@ const fetchArticles = (sort_by = 'created_at', order = 'desc', author, topic) =>
     .orderBy(sort_by, order)
     .modify(query => {
       if (author) query.where("articles.author", "=", author)
-    })
-    .modify(query => {
       if (topic) query.where("articles.topic", "=", topic)
     })
     .then(articles => {

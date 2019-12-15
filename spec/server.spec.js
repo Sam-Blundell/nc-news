@@ -10,7 +10,7 @@ chai.use(chaiSorted);
 describe('/api', () => {
   after(() => connection.destroy());
   beforeEach(() => connection.seed.run());
-  describe('/topics', () => { //testing for key data types?
+  describe('/topics', () => {
     it('GET:200, should respond with an array of topic objects that have keys "slug" and "describe"', () => {
       return request(server).get('/api/topics')
         .expect(200)
@@ -276,6 +276,17 @@ describe('/api', () => {
           })
         })
     });
+    it('GET:200, returns an array of articles filtered by a "topic" query and an "author" query, sorted by their created_at value, in descending order', () => {
+      return request(server).get('/api/articles?topic=mitch&author=rogersop&sort_by=created_at&order=desc')
+        .expect(200)
+        .then(response => {
+          expect(response.body.articles.length).to.equal(2)
+          expect(response.body.articles).to.be.sortedBy('created_at', { descending: true });
+          response.body.articles.map(articles => {
+            expect(articles.topic).to.equal('mitch');
+          })
+        })
+    })
     it('GET:400, Invalid Column. Should respond with "Bad Request" when passed a sort_by query that isnt a valid column', () => {
       return request(server).get('/api/articles?sort_by=notAColumn')
         .expect(400)
@@ -337,8 +348,8 @@ describe('/api', () => {
           .expect(200)
           .then(response => {
             expect(response.body).to.be.an('object');
-            expect(response.body.comment[0].votes).to.equal(20);
-            expect(response.body.comment[0]).to.have.all.keys(['author', 'comment_id', 'article_id', 'body', 'created_at', 'votes'])
+            expect(response.body.comment.votes).to.equal(20);
+            expect(response.body.comment).to.have.all.keys(['author', 'comment_id', 'article_id', 'body', 'created_at', 'votes'])
           })
       })
       it('PATCH:200, when passed a request body with no information returns the unchanged comment specified on the endpoint', () => {
@@ -346,8 +357,8 @@ describe('/api', () => {
           .expect(200)
           .then(response => {
             expect(response.body).to.be.an('object');
-            expect(response.body.comment[0].votes).to.equal(16);
-            expect(response.body.comment[0]).to.have.all.keys(['author', 'comment_id', 'article_id', 'body', 'created_at', 'votes'])
+            expect(response.body.comment.votes).to.equal(16);
+            expect(response.body.comment).to.have.all.keys(['author', 'comment_id', 'article_id', 'body', 'created_at', 'votes'])
           })
       })
       it('PATCH:404 Not Found. Should respond with "Comment Not Found" when receives a request with a valid parameter that doesnt exist in the database', () => {
@@ -378,29 +389,29 @@ describe('/api', () => {
             return request(server).get('/api/articles/1')
               .expect(200)
               .then(response => {
-                expect(+response.body.article.comment_count).to.equal(12); //article_id=1 originally has 13 comments
+                expect(+response.body.article.comment_count).to.equal(12);
               })
           })
       })
-    })
-    it('DELETE:404 Comment Not Found. Should respond with "Comment Not Found" when receives a request with a valid comment_id that doesnt exist in the database', () => {
-      return request(server).delete('/api/comments/99999')
-        .expect(404)
-        .then(response => {
-          expect(response.body.msg).to.equal('Comment Not Found')
-        })
-    })
-    it('Status:405 Method Not Allowed. Should respond with "Method Not Allowed when an invalid http request is sent', () => {
-      const invalidMethods = ['put', 'post'];
-      const methodPromises = invalidMethods.map(method => {
-        return request(server)[method]('/api/comments/:comment_id')
-          .expect(405)
+      it('DELETE:404 Comment Not Found. Should respond with "Comment Not Found" when receives a request with a valid comment_id that doesnt exist in the database', () => {
+        return request(server).delete('/api/comments/99999')
+          .expect(404)
           .then(response => {
-            expect(response.body.msg).to.equal('Method Not Allowed');
+            expect(response.body.msg).to.equal('Comment Not Found')
           })
       })
-      return Promise.all(methodPromises);
-    });
+      it('Status:405 Method Not Allowed. Should respond with "Method Not Allowed when an invalid http request is sent', () => {
+        const invalidMethods = ['put', 'post'];
+        const methodPromises = invalidMethods.map(method => {
+          return request(server)[method]('/api/comments/:comment_id')
+            .expect(405)
+            .then(response => {
+              expect(response.body.msg).to.equal('Method Not Allowed');
+            })
+        })
+        return Promise.all(methodPromises);
+      });
+    })
   });
   it('GET:200, should respond with a JSON describing all the available endpoints on this API', () => {
     return request(server).get('/api')
