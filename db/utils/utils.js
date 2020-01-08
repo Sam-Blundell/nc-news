@@ -1,5 +1,8 @@
 exports.formatDates = list => {
-  const newList = JSON.parse(JSON.stringify(list));
+
+  const newList = list.map(obj => {
+    return { ...obj }
+  });
 
   newList.map(object => {
     object.created_at = new Date(object.created_at);
@@ -19,7 +22,10 @@ exports.makeRefObj = list => {
 };
 
 exports.formatComments = (comments, articleRef) => {
-  const newComments = JSON.parse(JSON.stringify(comments));
+
+  const newComments = comments.map(obj => {
+    return { ...obj }
+  });
 
   newComments.map(comment => {
     comment.author = comment.created_by;
